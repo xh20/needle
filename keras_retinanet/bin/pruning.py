@@ -23,7 +23,6 @@ import tensorflow as tf
 
 
 from torch.autograd import Variable
-from ..models.resnet import custom_objects
 
 
 global best_acc
@@ -118,7 +117,7 @@ def parse_args(args):
     csv_parser.add_argument('annotations', help='Path to CSV file containing annotations for evaluation.')
     csv_parser.add_argument('classes', help='Path to a CSV file containing class label mapping.')
 
-    parser.add_argument('model',             help='Path to RetinaNet model.')
+    parser.add_argument('--model',           help='Path to RetinaNet model.')
     parser.add_argument('--gpu',             help='Id of the GPU to use (as reported by nvidia-smi).')
     parser.add_argument('--score-threshold', help='Threshold on score to filter detections with (defaults to 0.05).', default=0.05, type=float)
     parser.add_argument('--iou-threshold',   help='IoU Threshold to count for a positive detection (defaults to 0.5).', default=0.5, type=float)
@@ -136,7 +135,7 @@ def main(args=None):
 
     # load the model
     print('Loading model, this may take a second...')
-    model = keras.models.load_model(args.model, custom_objects=custom_objects)
+    model = keras.models.load_model(args.model)
 #     plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
     # print model summary
     print(model.summary())
