@@ -23,8 +23,7 @@ from keras.utils import plot_model
 import keras
 import tensorflow as tf
 import time
-from keras import models
-from keras.models import Sequential
+
 
 
 # Allow relative imports when being executed as script.
@@ -90,6 +89,10 @@ def parse_args(args):
 
     parser.add_argument('model',             help='Path to RetinaNet model.')
     parser.add_argument('--gpu',             help='Id of the GPU to use (as reported by nvidia-smi).')
+    parser.add_argument('--score-threshold', help='Threshold on score to filter detections with (defaults to 0.05).', default=0.05, type=float)
+    parser.add_argument('--iou-threshold',   help='IoU Threshold to count for a positive detection (defaults to 0.5).', default=0.5, type=float)
+    parser.add_argument('--max-detections',  help='Max Detections per image (defaults to 100).', default=1, type=int)
+    parser.add_argument('--save-path',       help='Path for saving images with detections.')
 
     return parser.parse_args(args)
 
@@ -112,17 +115,29 @@ def main(args=None):
     if args.save_path is not None and not os.path.exists(args.save_path):
         os.makedirs(args.save_path)
 
+    # create the generator
+    generator = create_generator(args)
     # load the model
     print('Loading model, this may take a second...')
     model = keras.models.load_model(args.model, custom_objects=custom_objects)
+#     plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
+    # print model summary
     print(model.summary())
+    # print(generator)
 
-    # Extracts the outputs of the top 12 layers
-    layer_outputs = [layer.output for layer in model.layers[:12]]
-    # Creates a model that will return these outputs, given the model input
-    activation_model = models.Model(inputs=model.input, outputs=layer_outputs)
-    # Returns a list of five Numpy arrays: one array per layer activation
-    activations = activation_model.predict(img_tensor)
+    # start evaluation
+    start = time.time()
+    (precision_none, precision_above, precision_under, precision_needle, detection_accuracy, average_precision) = evaluate_new(
+        generator,
+        model,
+        iou_threshold=args.iou_threshold,
+        score_threshold=args.score_threshold,
+        max_detections=args.max_detections,
+        save_path=args.save_path
+    )
+
+    end = time.time()
+    print "total runtime is, ", str(end-start)
 
 
 if __name__ == '__main__':
