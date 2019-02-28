@@ -48,6 +48,31 @@ def get_session():
     return tf.Session(config=config)
 
 
+def create_generator(args):
+    if args.dataset_type == 'coco':
+        # import here to prevent unnecessary dependency on cocoapi
+        from ..preprocessing.coco import CocoGenerator
+
+        validation_generator = CocoGenerator(
+            args.coco_path,
+            'val2017'
+        )
+    elif args.dataset_type == 'pascal':
+        validation_generator = PascalVocGenerator(
+            args.pascal_path,
+            'test',
+        )
+    elif args.dataset_type == 'csv':
+        validation_generator = CSVGenerator(
+            args.annotations,
+            args.classes,
+        )
+    else:
+        raise ValueError('Invalid data type received: {}'.format(args.dataset_type))
+
+    return validation_generator
+
+
 def parse_args(args):
     parser     = argparse.ArgumentParser(description='Evaluation script for a RetinaNet network.')
     subparsers = parser.add_subparsers(help='Arguments for specific dataset types.', dest='dataset_type')
